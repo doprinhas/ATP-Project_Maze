@@ -1,5 +1,5 @@
 package View;
 
 public interface IView {
-    void DisplayMaze(int[][] maze);
+    void displayMaze(int[][] maze);
 }
