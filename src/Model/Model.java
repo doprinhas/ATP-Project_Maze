@@ -8,7 +8,6 @@ public class Model extends Observable implements IModel{
 
     @Override
     public void generaeMaze(int width , int height) {
-
     }
 
     @Override
