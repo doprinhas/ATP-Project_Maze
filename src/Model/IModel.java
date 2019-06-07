@@ -5,7 +5,7 @@ import javafx.scene.input.KeyCode;
 public interface IModel {
 
     //Maze
-    void generaeMaze(int width , int height);
+    void generateMaze(int width , int height);
     int [][] getMaze();
 
     //Character
