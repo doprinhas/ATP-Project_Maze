@@ -1,113 +1,136 @@
 package Model;
 
+import Client.Client;
+import Client.IClientStrategy;
+import IO.MyDecompressorInputStream;
+import Server.*;
+import algorithms.mazeGenerators.Maze;
+import algorithms.mazeGenerators.Position;
+import javafx.geometry.Pos;
 import javafx.scene.input.KeyCode;
+import sun.nio.ch.ThreadPool;
 
+import java.io.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Observable;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.RejectedExecutionException;
+
 
 public class Model extends Observable implements IModel{
 
-    public Model() {
+    private Maze maze;
+    private Position characterPos;
 
+    private Server mazeGeneratingServer;
+    private Server solveSearchProblemServer;
+
+    private ExecutorService pool;
+
+
+    public Model() {
+        mazeGeneratingServer = new Server(5400, 1000, new ServerStrategyGenerateMaze());
+        solveSearchProblemServer = new Server(5401, 1000, new ServerStrategySolveSearchProblem());
+
+        pool = Executors.newFixedThreadPool(Configurations.getThreadPoolSize());
     }
 
-    //<editor-fold desc="Servers">
     public void startServers() {
-
+        mazeGeneratingServer.start();
+        solveSearchProblemServer.start();
     }
 
     public void stopServers() {
-
+        mazeGeneratingServer.stop();
+        solveSearchProblemServer.stop();
     }
-    //</editor-fold>
 
-    //<editor-fold desc="Character">
-    private int characterPositionRow = 1;
-    private int characterPositionColumn = 1;
-    //</editor-fold>
-
-    //<editor-fold desc="Maze">
-    private int[][] maze = { // a stub...
-            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-            {1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1},
-            {0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1},
-            {1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1},
-            {1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1},
-            {1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1},
-            {1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1},
-            {1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1},
-            {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1},
-            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1}
-    };
-
-    private int[][] generateRandomMaze(int width, int height) {
-        Random rand = new Random();
-        maze = new int[width][height];
-        for (int i = 0; i < maze.length; i++) {
-            for (int j = 0; j < maze[i].length; j++) {
-                maze[i][j] = Math.abs(rand.nextInt() % 2);
-            }
+    @Override
+    public void generateMaze(int width , int height) {
+        try {
+            pool.execute(() -> communicateWithServer_MazeGenerating(width, height));
+            setChanged();
+            notifyObservers();
         }
-        return maze;
+        catch(RejectedExecutionException e)
+        {
+            e.printStackTrace();
+        }
     }
-    //</editor-fold>
 
-    //<editor-fold desc="Getters">
+    private synchronized void communicateWithServer_MazeGenerating(int width, int height)
+    {
+        try {
+            Client client = new Client(InetAddress.getLocalHost(), 5400, new IClientStrategy() {
+                @Override
+                public void clientStrategy(InputStream inFromServer, OutputStream outToServer) {
+                    try {
+                        ObjectOutputStream toServer = new ObjectOutputStream(outToServer);
+                        ObjectInputStream fromServer = new ObjectInputStream(inFromServer);
+                        toServer.flush();
+                        int[] mazeDimensions = new int[]{width, height};
+                        toServer.writeObject(mazeDimensions); //send maze dimensions to server
+                        toServer.flush();
+                        byte[] compressedMaze = (byte[]) fromServer.readObject(); //read generated maze (compressed with MyCompressor) from server
+                        InputStream is = new MyDecompressorInputStream(new ByteArrayInputStream(compressedMaze));
+                        byte[] decompressedMaze = new byte[100000];
+                        is.read(decompressedMaze); //Fill decompressedMaze with bytes
+                        maze = new Maze(decompressedMaze);
+                        characterPos = maze.getStartPosition();
+
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            client.communicateWithServer();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public int[][] getMaze() {
-        return maze;
-    }
-
-    @Override
-    public int getCharacterPositionRow() {
-        return characterPositionRow;
-    }
-
-    @Override
-    public int getCharacterPositionCol() {
-        return characterPositionColumn;
-    }
-
-    @Override
-    public void close() {
-    }
-    //</editor-fold>
-
-    //<editor-fold desc="Model Functionality">
-    @Override
-    public void generateMaze(int width, int height) {
-        //Generate maze
-        maze = generateRandomMaze(width,height);
-
-        setChanged(); //Raise a flag that I have changed
-        notifyObservers("Generate Maze"); //Wave the flag so the observers will notice
-
+        return maze.toIntArray();
     }
 
     @Override
     public void moveCharacter(KeyCode movement) {
         switch (movement) {
             case UP:
-                characterPositionRow--;
+                characterPos.changeRowBy(-1);
                 break;
             case DOWN:
-                characterPositionRow++;
+                characterPos.changeRowBy(1);
                 break;
             case RIGHT:
-                characterPositionColumn++;
+                characterPos.changeColumnBy(1);
                 break;
             case LEFT:
-                characterPositionColumn--;
+                characterPos.changeColumnBy(-1);
                 break;
             case HOME:
-                characterPositionRow = 0;
-                characterPositionColumn = 0;
+                characterPos = maze.getStartPosition();
         }
         setChanged();
-        notifyObservers("Character Moved");
+        notifyObservers(new Position(characterPos));
     }
-    //</editor-fold>
+
+    @Override
+    public int getCharacterPositionRow() {
+        return characterPos.getRowIndex();
+    }
+
+    @Override
+    public int getCharacterPositionCol() {
+        return characterPos.getColumnIndex();
+    }
+
+    @Override
+    public void close() {
+
+    }
 }
