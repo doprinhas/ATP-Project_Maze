@@ -31,6 +31,7 @@ public class MazeDisplayer extends Canvas {
 
     public void setCharacterPosition( int row , int col ){
         if ( row < maze.length && col < maze[row].length ){
+            gc.clearRect(characterColPosition*cellWidth +1, characterRowPosition*cellHeight +1, cellWidth-1, cellHeight-1);
             characterColPosition = col;
             characterRowPosition = row;
             redrawCharacter();
@@ -45,27 +46,35 @@ public class MazeDisplayer extends Canvas {
     private double cellHeight;
     private double cellWidth;
 
-    private void redrawCharacter() {
-
+    public void redrawCharacter() {
+        Image charImage = getImage(ImageFileNameCharacter.get());
+        gc.drawImage(charImage , characterColPosition * cellHeight , characterRowPosition * cellWidth , cellWidth , cellHeight);
     }
 
-    private void drawMaze() {
+    public void drawMaze() {
         if ( maze == null )
             return;
 
+        Image wallImage = getImage(ImageFileNameWall.get());
+        Image charImage = getImage(ImageFileNameCharacter.get());
+        if ( wallImage == null || charImage == null )
+            return;
+
         gc = getGraphicsContext2D();
+        gc.clearRect(0, 0, getWidth(), getHeight());
 
         canvasHeight = getHeight();
         canvasWidth = getWidth();
         cellHeight = canvasHeight / maze.length;
         cellWidth = canvasWidth / maze[0].length;
 
-        try {
-            Image wallImage = new Image(new FileInputStream(ImageFileNameWall.get()));
+        for ( int i = 0 ; i < maze.length ; i++ )
+            for ( int j = 0 ; j < maze[i].length ; j++ )
+                if ( maze[i][j] == 1 )
+                    gc.drawImage( wallImage , i * cellWidth , j * cellHeight , cellHeight , cellWidth );
 
-        } catch (FileNotFoundException e) {
 
-        }
+
     }
 
     private Image getImage( String path ){
