@@ -10,6 +10,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Modality;
@@ -31,8 +32,8 @@ public class View implements Observer, IView{
     public javafx.scene.control.Button btn_generateMaze;
     public javafx.scene.control.Button btn_solveMaze;
 
-    public StringProperty characterPositionRow = new SimpleStringProperty("1");
-    public StringProperty characterPositionColumn = new SimpleStringProperty("1");
+    public StringProperty characterPositionRow = new SimpleStringProperty("0");
+    public StringProperty characterPositionColumn = new SimpleStringProperty("0");
 
 
     @FXML
@@ -69,7 +70,7 @@ public class View implements Observer, IView{
 
     @Override
     public void update(Observable o, Object arg) {
-        if (arg != null && ((String)arg).equals("Character Moved")) {
+        if (arg != null && arg.equals("Character Moved")) {
             moveCharacter();
             btn_generateMaze.setDisable(false);
         }
@@ -88,8 +89,8 @@ public class View implements Observer, IView{
     public void displayMaze(int[][] maze) {
         mazeDisplayer.setMaze(maze);
         mazeDisplayer.setCharacterPosition(viewModel.getCharacterPositionRow(), viewModel.getCharacterPositionColumn());
-        this.characterPositionRow.set(characterPositionRow + "");
-        this.characterPositionColumn.set(characterPositionColumn + "");
+        this.characterPositionRow.set(characterPositionRow.getValue() + "");
+        this.characterPositionColumn.set(characterPositionColumn.getValue() + "");
         btn_solveMaze.setDisable(false);
     }
 
@@ -102,13 +103,13 @@ public class View implements Observer, IView{
         viewModel.generateMaze(width, heigth);
     }
 
-    public void solveMaze(ActionEvent actionEvent) {
+    public void solveMaze( ActionEvent actionEvent ) {
 
         showAlert("Solving maze..");
     }
     //</editor-fold>
 
-    private void showAlert(String alertMessage) {
+    private void showAlert( String alertMessage ) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setContentText(alertMessage);
         alert.show();
@@ -120,7 +121,7 @@ public class View implements Observer, IView{
     }
 
 
-    public void About(ActionEvent actionEvent) {
+    public void About( ActionEvent actionEvent ) {
         try {
             Stage stage = new Stage();
             stage.setTitle("About");
@@ -138,5 +139,9 @@ public class View implements Observer, IView{
         this.mazeDisplayer.requestFocus();
     }
     //endregion
+
+    public void numericOnly( KeyEvent event ){
+        KeyCode c = event.getCode();
+    }
 
 }

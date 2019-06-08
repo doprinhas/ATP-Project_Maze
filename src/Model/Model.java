@@ -51,8 +51,7 @@ public class Model extends Observable implements IModel{
     public void generateMaze(int width , int height) {
         try {
             pool.execute(() -> communicateWithServer_MazeGenerating(width, height));
-            setChanged();
-            notifyObservers();
+
         }
         catch(RejectedExecutionException e)
         {
@@ -79,11 +78,11 @@ public class Model extends Observable implements IModel{
                         is.read(decompressedMaze); //Fill decompressedMaze with bytes
                         maze = new Maze(decompressedMaze);
                         characterPos = maze.getStartPosition();
-
-
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    setChanged();
+                    notifyObservers("New Maze");
                 }
             });
             client.communicateWithServer();
@@ -116,7 +115,7 @@ public class Model extends Observable implements IModel{
                 characterPos = maze.getStartPosition();
         }
         setChanged();
-        notifyObservers(new Position(characterPos));
+        notifyObservers("Character Moved");
     }
 
     @Override

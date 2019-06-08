@@ -1,4 +1,5 @@
 import Model.*;
+import Server.Configurations;
 import View.View;
 import ViewModel.ViewModel;
 import javafx.application.Application;
@@ -16,6 +17,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         //ViewModel -> Model
+        Configurations.setDefaultConfigurations();
         Model model = new Model();
         model.startServers();
         ViewModel viewModel = new ViewModel(model);
