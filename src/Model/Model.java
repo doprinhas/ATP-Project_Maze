@@ -2,6 +2,7 @@ package Model;
 
 import Client.Client;
 import Client.IClientStrategy;
+import IO.MyCompressorOutputStream;
 import IO.MyDecompressorInputStream;
 import Server.*;
 import algorithms.mazeGenerators.Maze;
@@ -13,19 +14,26 @@ import sun.nio.ch.ThreadPool;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Observable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 
 public class Model extends Observable implements IModel{
 
     private Maze maze;
-    private Position characterPos;
+
+    private int characterPositionRow;
+    private int characterPositionColumn;
 
     private Server mazeGeneratingServer;
     private Server solveSearchProblemServer;
+
+    final private String SAVE_PATH = System.getProperty("java.io.tmpdir") + "\\Saved";
 
     private ExecutorService pool;
 
@@ -35,6 +43,21 @@ public class Model extends Observable implements IModel{
         solveSearchProblemServer = new Server(5401, 1000, new ServerStrategySolveSearchProblem());
 
         pool = Executors.newFixedThreadPool(Configurations.getThreadPoolSize());
+
+        File savedDir = new File(SAVE_PATH);
+        if(!savedDir.exists())
+        {
+            try
+            {
+                if (!savedDir.mkdir())
+                    throw new Exception("Cant create folder");
+            }
+            catch(Exception e)
+            {
+                System.out.println("Cant create folder");
+                e.printStackTrace();
+            }
+        }
     }
 
     public void startServers() {
@@ -77,7 +100,10 @@ public class Model extends Observable implements IModel{
                         byte[] decompressedMaze = new byte[100000];
                         is.read(decompressedMaze); //Fill decompressedMaze with bytes
                         maze = new Maze(decompressedMaze);
-                        characterPos = maze.getStartPosition();
+                        Position characterPos = maze.getStartPosition();
+                        characterPositionRow = characterPos.getRowIndex();
+                        characterPositionColumn = characterPos.getColumnIndex();
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -100,19 +126,24 @@ public class Model extends Observable implements IModel{
     public void moveCharacter(KeyCode movement) {
         switch (movement) {
             case UP:
-                characterPos.changeRowBy(-1);
+                if(maze.isAPass(characterPositionRow-1, characterPositionColumn))
+                    characterPositionRow--;
                 break;
             case DOWN:
-                characterPos.changeRowBy(1);
+                if(maze.isAPass(characterPositionRow+1, characterPositionColumn))
+                    characterPositionRow++;
                 break;
             case RIGHT:
-                characterPos.changeColumnBy(1);
+                if(maze.isAPass(characterPositionRow, characterPositionColumn+1))
+                    characterPositionColumn++;
                 break;
             case LEFT:
-                characterPos.changeColumnBy(-1);
+                if(maze.isAPass(characterPositionRow, characterPositionColumn+1))
+                    characterPositionColumn++;
                 break;
             case HOME:
-                characterPos = maze.getStartPosition();
+                characterPositionRow = maze.getStartPosition().getRowIndex();
+                characterPositionColumn = maze.getStartPosition().getColumnIndex();
         }
         setChanged();
         notifyObservers("Character Moved");
@@ -120,16 +151,115 @@ public class Model extends Observable implements IModel{
 
     @Override
     public int getCharacterPositionRow() {
-        return characterPos.getRowIndex();
+        return characterPositionRow;
     }
 
     @Override
     public int getCharacterPositionCol() {
-        return characterPos.getColumnIndex();
+        return characterPositionColumn;
+    }
+
+    @Override
+    public boolean saveGame(String name) {
+        try {
+            File saveMaze = new File(SAVE_PATH + "\\" + name + "Maze");
+            File saveCharPos = new File(SAVE_PATH + "\\" + name + "CharPos");
+            if(!saveMaze.createNewFile())
+                return false;
+            if(!saveCharPos.createNewFile())
+            {
+                saveMaze.delete();
+                return false;
+            }
+
+            FileOutputStream out = new FileOutputStream(SAVE_PATH + "\\" + name + "Maze");
+            MyCompressorOutputStream compressor = new MyCompressorOutputStream(out);
+            compressor.write(maze.toByteArray());
+
+            FileWriter fileWriter = new FileWriter(saveCharPos);
+            fileWriter.write(characterPositionRow + "\n");
+            fileWriter.write(characterPositionColumn);
+
+
+            compressor.close();
+
+            fileWriter.flush();
+            fileWriter.close();
+
+            return true;
+        }
+        catch(IOException e)
+        {
+            File saveMaze = new File(SAVE_PATH + "\\" + name + "Maze");
+            File saveCharPos = new File(SAVE_PATH + "\\" + name + "CharPos");
+            if(saveMaze.exists())
+                saveMaze.delete();
+            if(saveCharPos.exists())
+                saveCharPos.delete();
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public List<String> getAllSavedMazes() {
+        File savedMazeFolder = new File(SAVE_PATH);
+        List<String> res = new ArrayList<>();
+
+        for (File fileEntry : savedMazeFolder.listFiles()) {
+            String fileName = fileEntry.getName();
+            if (fileName.endsWith("Maze"))
+                res.add(fileName.substring(0,fileName.length()-4));
+        }
+
+        return res;
+    }
+
+    @Override
+    public void loadGame(String name) throws FileNotFoundException{
+
+        FileInputStream inStreamMaze = new FileInputStream(SAVE_PATH + "\\" + name + "Maze");
+        MyDecompressorInputStream decompressor = new MyDecompressorInputStream(inStreamMaze);
+
+        File charPosFile = new File(SAVE_PATH + "\\" + name + "charPos");
+        FileReader fileReader = new FileReader(charPosFile);
+        BufferedReader br = new BufferedReader(fileReader);
+
+        int arraySize = 10000;
+        byte[] inMaze;
+        do {
+            inMaze = new byte[arraySize];
+            arraySize += 10000;
+        }
+        while(decompressor.read(inMaze) != arraySize); // Checking if the byteArray is big enough
+
+        try {
+            characterPositionRow = Integer.parseInt(br.readLine());
+            characterPositionColumn = Integer.parseInt(br.readLine());
+            maze = new Maze(inMaze);
+
+            setChanged();
+            notifyObservers("Load Maze");
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+
+        }
+
+        return true;
     }
 
     @Override
     public void close() {
-
+        try{
+            pool.shutdown();
+            pool.awaitTermination(3, TimeUnit.SECONDS);
+            stopServers();
+        }
+        catch(InterruptedException e)
+        {
+            e.printStackTrace();
+        }
     }
 }
