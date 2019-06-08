@@ -24,7 +24,7 @@ public class Main extends Application {
         model.addObserver(viewModel);
 
         //Loading Main Windows
-        primaryStage.setTitle("My Application!");
+        primaryStage.setTitle("The Maze!");
         primaryStage.setWidth(800);
         primaryStage.setHeight(700);
         FXMLLoader fxmlLoader = new FXMLLoader();

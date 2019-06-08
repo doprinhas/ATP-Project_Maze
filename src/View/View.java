@@ -10,12 +10,15 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Modality;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
 
+import java.awt.*;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -25,15 +28,18 @@ public class View implements Observer, IView{
 
     public javafx.scene.control.TextField txtfld_rowsNum;
     public javafx.scene.control.TextField txtfld_columnsNum;
+    public javafx.scene.control.TextField txtfld_FloorNum;
 
     public javafx.scene.control.Label lbl_rowsNum;
     public javafx.scene.control.Label lbl_columnsNum;
+    public javafx.scene.control.Label lbl_FloorNum;
 
     public javafx.scene.control.Button btn_generateMaze;
     public javafx.scene.control.Button btn_solveMaze;
 
     public StringProperty characterPositionRow = new SimpleStringProperty("0");
     public StringProperty characterPositionColumn = new SimpleStringProperty("0");
+    public StringProperty characterPositionFloor = new SimpleStringProperty("0");
 
 
     @FXML
@@ -56,6 +62,7 @@ public class View implements Observer, IView{
     private void bindProperties() {
         lbl_rowsNum.textProperty().bind(this.characterPositionRow);
         lbl_columnsNum.textProperty().bind(this.characterPositionColumn);
+        lbl_FloorNum.textProperty().bind(this.characterPositionFloor);
     }
 
     public void setResizeEvent() {
@@ -82,6 +89,9 @@ public class View implements Observer, IView{
 
     public void moveCharacter(){
         mazeDisplayer.setCharacterPosition(viewModel.getCharacterPositionRow(), viewModel.getCharacterPositionColumn());
+        this.characterPositionRow.set(viewModel.getCharacterPositionRow() + "");
+        this.characterPositionColumn.set(viewModel.getCharacterPositionColumn() + "");
+//        this.characterPositionFloor.set(characterPositionFloor.getValue());
         mazeDisplayer.redrawCharacter();
     }
 
@@ -104,15 +114,22 @@ public class View implements Observer, IView{
     }
 
     public void solveMaze( ActionEvent actionEvent ) {
+        btn_generateMaze.setDisable(true);
+        btn_solveMaze.setDisable(true);
+        SplashScreen splash = SplashScreen.getSplashScreen();
+        showAlert("Solving Maze...");
 
-        showAlert("Solving maze..");
     }
     //</editor-fold>
 
     private void showAlert( String alertMessage ) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        Alert alert = new Alert(Alert.AlertType.NONE);
         alert.setContentText(alertMessage);
         alert.show();
+        alert.close();
+//        alert.setAlertType(Alert.AlertType.INFORMATION);
+//        alert.setContentText("Maze Solved");
+//        alert.showAndWait();
     }
 
     public void KeyPressed(KeyEvent keyEvent) {
