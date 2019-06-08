@@ -1,5 +1,7 @@
 package Model;
 
+import algorithms.mazeGenerators.Maze;
+import algorithms.search.Solution;
 import javafx.scene.input.KeyCode;
 
 import java.io.FileNotFoundException;
@@ -22,6 +24,7 @@ public interface IModel {
     boolean saveGame(String name);
     List<String> getAllSavedMazes();
     void loadGame(String name) throws FileNotFoundException;
+    void solve(Maze maze);
 
     //
     void close();
