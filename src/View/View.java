@@ -2,6 +2,7 @@ package View;
 
 
 import ViewModel.ViewModel;
+import com.sun.deploy.ui.ProgressDialog;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
@@ -11,6 +12,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -116,17 +118,17 @@ public class View implements Observer, IView{
     public void solveMaze( ActionEvent actionEvent ) {
         btn_generateMaze.setDisable(true);
         btn_solveMaze.setDisable(true);
-        SplashScreen splash = SplashScreen.getSplashScreen();
+
         showAlert("Solving Maze...");
 
     }
     //</editor-fold>
 
     private void showAlert( String alertMessage ) {
-        Alert alert = new Alert(Alert.AlertType.NONE);
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setContentText(alertMessage);
         alert.show();
-        alert.close();
 //        alert.setAlertType(Alert.AlertType.INFORMATION);
 //        alert.setContentText("Maze Solved");
 //        alert.showAndWait();

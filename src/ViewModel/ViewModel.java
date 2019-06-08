@@ -50,4 +50,5 @@ public class ViewModel extends Observable implements Observer {
         return model.getCharacterPositionCol();
     }
     //</editor-fold>
+
 }
