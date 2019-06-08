@@ -26,11 +26,16 @@ public class MazeDisplayer extends Canvas {
     }
     
     public void setMaze( int[][] maze ){
-        if ( maze != null )
+        if ( maze != null ) {
             this.maze = maze;
+            canvasHeight = getHeight();
+            canvasWidth = getWidth();
+            cellHeight = canvasHeight / maze.length;
+            cellWidth = canvasWidth / maze[0].length;
+        }
     }
 
-    public void setEndPosition( int row , int col ){
+    public void setGoalPosition( int row , int col ){
         if ( row < maze.length && col < maze[0].length ){
             endPositionRow = row;
             ensPositionCol = col;
@@ -71,11 +76,6 @@ public class MazeDisplayer extends Canvas {
 
         gc = getGraphicsContext2D();
         gc.clearRect(0, 0, getWidth(), getHeight());
-
-        canvasHeight = getHeight();
-        canvasWidth = getWidth();
-        cellHeight = canvasHeight / maze.length;
-        cellWidth = canvasWidth / maze[0].length;
 
         for ( int i = 0 ; i < maze.length ; i++ )
             for ( int j = 0 ; j < maze[i].length ; j++ )

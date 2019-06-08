@@ -49,6 +49,10 @@ public class ViewModel extends Observable implements Observer {
         //return characterPositionColumnIndex;
         return model.getCharacterPositionCol();
     }
+
+    public int getGoalPositionRow(){ return model.getGoalPositionRow(); }
+
+    public int getGoalPositionCol(){ return model.getGoalPositionCol(); }
     //</editor-fold>
 
 }
