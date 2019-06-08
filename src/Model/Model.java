@@ -246,8 +246,6 @@ public class Model extends Observable implements IModel{
             e.printStackTrace();
 
         }
-
-        return true;
     }
 
     @Override
