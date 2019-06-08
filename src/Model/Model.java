@@ -7,6 +7,7 @@ import IO.MyDecompressorInputStream;
 import Server.*;
 import algorithms.mazeGenerators.Maze;
 import algorithms.mazeGenerators.Position;
+import algorithms.search.Solution;
 import javafx.geometry.Pos;
 import javafx.scene.input.KeyCode;
 import sun.nio.ch.ThreadPool;
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 public class Model extends Observable implements IModel{
 
     private Maze maze;
+    private Solution mazeSol;
 
     private int characterPositionRow;
     private int characterPositionColumn;
@@ -58,6 +60,9 @@ public class Model extends Observable implements IModel{
                 e.printStackTrace();
             }
         }
+
+        maze = null;
+        mazeSol = null;
     }
 
     public void startServers() {
@@ -78,44 +83,6 @@ public class Model extends Observable implements IModel{
         }
         catch(RejectedExecutionException e)
         {
-            e.printStackTrace();
-        }
-    }
-
-    private synchronized void communicateWithServer_MazeGenerating(int width, int height)
-    {
-        try {
-            Client client = new Client(InetAddress.getLocalHost(), 5400, new IClientStrategy() {
-                @Override
-                public void clientStrategy(InputStream inFromServer, OutputStream outToServer) {
-                    try {
-                        ObjectOutputStream toServer = new ObjectOutputStream(outToServer);
-                        ObjectInputStream fromServer = new ObjectInputStream(inFromServer);
-                        toServer.flush();
-                        int[] mazeDimensions = new int[]{width, height};
-                        toServer.writeObject(mazeDimensions); //send maze dimensions to server
-                        toServer.flush();
-                        byte[] compressedMaze = (byte[]) fromServer.readObject(); //read generated maze (compressed with MyCompressor) from server
-                        InputStream is = new MyDecompressorInputStream(new ByteArrayInputStream(compressedMaze));
-                        byte[] decompressedMaze = new byte[100000];
-                        is.read(decompressedMaze); //Fill decompressedMaze with bytes
-                        maze = new Maze(decompressedMaze);
-                        Position characterPos = maze.getStartPosition();
-                        characterPositionRow = characterPos.getRowIndex();
-                        characterPositionColumn = characterPos.getColumnIndex();
-
-
-                        maze.print();
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    setChanged();
-                    notifyObservers("New Maze");
-                }
-            });
-            client.communicateWithServer();
-        } catch (UnknownHostException e) {
             e.printStackTrace();
         }
     }
@@ -254,6 +221,83 @@ public class Model extends Observable implements IModel{
         {
             e.printStackTrace();
 
+        }
+    }
+
+    @Override
+    public void solve(Maze maze) {
+        if(mazeSol == null)
+            pool.execute(() -> communicateWithServer_MazeSolver());
+        else {
+            setChanged();
+            notifyObservers("MazeSolution");
+        }
+
+    }
+
+    private synchronized  void communicateWithServer_MazeSolver()
+    {
+        try {
+            Client client = new Client(InetAddress.getLocalHost(), 5401, new IClientStrategy() {
+                @Override
+                public void clientStrategy(InputStream inFromServer, OutputStream outToServer) {
+                    try {
+                        ObjectOutputStream toServer = new ObjectOutputStream(outToServer);
+                        ObjectInputStream fromServer = new ObjectInputStream(inFromServer);
+                        toServer.flush();
+
+                        toServer.writeObject(maze); //send maze to server
+                        toServer.flush();
+                        mazeSol = (Solution) fromServer.readObject();
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    setChanged();
+                    notifyObservers("Maze Solution");
+                }
+            });
+            client.communicateWithServer();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private synchronized void communicateWithServer_MazeGenerating(int width, int height)
+    {
+        try {
+            Client client = new Client(InetAddress.getLocalHost(), 5400, new IClientStrategy() {
+                @Override
+                public void clientStrategy(InputStream inFromServer, OutputStream outToServer) {
+                    try {
+                        ObjectOutputStream toServer = new ObjectOutputStream(outToServer);
+                        ObjectInputStream fromServer = new ObjectInputStream(inFromServer);
+                        toServer.flush();
+                        int[] mazeDimensions = new int[]{width, height};
+                        toServer.writeObject(mazeDimensions); //send maze dimensions to server
+                        toServer.flush();
+                        byte[] compressedMaze = (byte[]) fromServer.readObject(); //read generated maze (compressed with MyCompressor) from server
+                        InputStream is = new MyDecompressorInputStream(new ByteArrayInputStream(compressedMaze));
+                        byte[] decompressedMaze = new byte[100000];
+                        is.read(decompressedMaze); //Fill decompressedMaze with bytes
+                        maze = new Maze(decompressedMaze);
+                        Position characterPos = maze.getStartPosition();
+                        characterPositionRow = characterPos.getRowIndex();
+                        characterPositionColumn = characterPos.getColumnIndex();
+
+
+                        maze.print();
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    setChanged();
+                    notifyObservers("New Maze");
+                }
+            });
+            client.communicateWithServer();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
         }
     }
 
