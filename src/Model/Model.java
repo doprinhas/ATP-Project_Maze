@@ -104,6 +104,9 @@ public class Model extends Observable implements IModel{
                         characterPositionRow = characterPos.getRowIndex();
                         characterPositionColumn = characterPos.getColumnIndex();
 
+
+                        maze.print();
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -138,8 +141,8 @@ public class Model extends Observable implements IModel{
                     characterPositionColumn++;
                 break;
             case LEFT:
-                if(maze.isAPass(characterPositionRow, characterPositionColumn+1))
-                    characterPositionColumn++;
+                if(maze.isAPass(characterPositionRow, characterPositionColumn-1))
+                    characterPositionColumn--;
                 break;
             case HOME:
                 characterPositionRow = maze.getStartPosition().getRowIndex();
@@ -158,6 +161,12 @@ public class Model extends Observable implements IModel{
     public int getCharacterPositionCol() {
         return characterPositionColumn;
     }
+
+    @Override
+    public int getGoalPositionRow(){ return maze.getGoalPosition().getRowIndex(); }
+
+    @Override
+    public int getGoalPositionCol(){ return maze.getGoalPosition().getColumnIndex(); }
 
     @Override
     public boolean saveGame(String name) {

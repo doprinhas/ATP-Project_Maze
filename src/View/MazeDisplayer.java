@@ -16,6 +16,9 @@ public class MazeDisplayer extends Canvas {
     private int[][] maze;
     private int characterRowPosition;
     private int characterColPosition;
+    private int endPositionRow;
+    private int ensPositionCol;
+
 
     public MazeDisplayer() {
         characterRowPosition = 0;
@@ -23,9 +26,14 @@ public class MazeDisplayer extends Canvas {
     }
     
     public void setMaze( int[][] maze ){
-        if ( maze != null ){
+        if ( maze != null )
             this.maze = maze;
-            drawMaze();
+    }
+
+    public void setEndPosition( int row , int col ){
+        if ( row < maze.length && col < maze[0].length ){
+            endPositionRow = row;
+            ensPositionCol = col;
         }
     }
 
@@ -57,7 +65,8 @@ public class MazeDisplayer extends Canvas {
 
         Image wallImage = getImage(ImageFileNameWall.get());
         Image charImage = getImage(ImageFileNameCharacter.get());
-        if ( wallImage == null || charImage == null )
+        Image endImage = getImage(ImageFileNameEnd.get());
+        if ( wallImage == null || charImage == null /*|| endImage == null*/ )
             return;
 
         gc = getGraphicsContext2D();
@@ -71,9 +80,11 @@ public class MazeDisplayer extends Canvas {
         for ( int i = 0 ; i < maze.length ; i++ )
             for ( int j = 0 ; j < maze[i].length ; j++ )
                 if ( maze[i][j] == 1 )
-                    gc.drawImage( wallImage , i * cellWidth , j * cellHeight , cellHeight , cellWidth );
+                    gc.drawImage( wallImage , j * cellHeight , i * cellWidth , cellHeight , cellWidth);
 
 
+
+        gc.drawImage( endImage , endPositionRow * cellHeight , ensPositionCol * cellWidth , cellHeight , cellWidth);
 
     }
 
@@ -90,10 +101,16 @@ public class MazeDisplayer extends Canvas {
     //region Properties
     private StringProperty ImageFileNameWall = new SimpleStringProperty();
     private StringProperty ImageFileNameCharacter = new SimpleStringProperty();
+    private StringProperty ImageFileNameEnd = new SimpleStringProperty();
 
     public void setImageFileNameWall( String imageFileNameWall ) {
         if ( imageFileNameWall != null )
             this.ImageFileNameWall.set(imageFileNameWall);
+    }
+
+    public void setImageFileNameEnd( String imageFileNameEnd ) {
+        if ( imageFileNameEnd != null )
+            this.ImageFileNameEnd.set(imageFileNameEnd);
     }
 
     public void setImageFileNameCharacter( String imageFileNameCharacter ) {
@@ -106,5 +123,7 @@ public class MazeDisplayer extends Canvas {
     }
 
     public String getImageFileNameWall() { return ImageFileNameWall.get(); }
+
+    public String getImageFileNameEnd() { return ImageFileNameEnd.get(); }
 
 }

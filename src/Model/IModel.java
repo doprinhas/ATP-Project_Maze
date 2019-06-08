@@ -15,6 +15,8 @@ public interface IModel {
     void moveCharacter(KeyCode movement);
     int getCharacterPositionRow();
     int getCharacterPositionCol();
+    int getGoalPositionRow();
+    int getGoalPositionCol();
 
     //Game
     boolean saveGame(String name);

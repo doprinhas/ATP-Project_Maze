@@ -100,6 +100,8 @@ public class View implements Observer, IView{
     @Override
     public void displayMaze(int[][] maze) {
         mazeDisplayer.setMaze(maze);
+        mazeDisplayer.drawMaze();
+        mazeDisplayer.setEndPosition(viewModel.getCharacterPositionRow() , viewModel.getCharacterPositionColumn());
         mazeDisplayer.setCharacterPosition(viewModel.getCharacterPositionRow(), viewModel.getCharacterPositionColumn());
         this.characterPositionRow.set(characterPositionRow.getValue() + "");
         this.characterPositionColumn.set(characterPositionColumn.getValue() + "");
