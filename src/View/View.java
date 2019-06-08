@@ -131,9 +131,6 @@ public class View implements Observer, IView{
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setContentText(alertMessage);
         alert.show();
-//        alert.setAlertType(Alert.AlertType.INFORMATION);
-//        alert.setContentText("Maze Solved");
-//        alert.showAndWait();
     }
 
     public void KeyPressed(KeyEvent keyEvent) {
