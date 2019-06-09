@@ -5,6 +5,7 @@ import Client.IClientStrategy;
 import IO.MyCompressorOutputStream;
 import IO.MyDecompressorInputStream;
 import Server.*;
+import View.View;
 import algorithms.mazeGenerators.Maze;
 import algorithms.mazeGenerators.Position;
 import algorithms.search.Solution;
@@ -79,7 +80,6 @@ public class Model extends Observable implements IModel{
     public void generateMaze(int width , int height) {
         try {
             pool.execute(() -> communicateWithServer_MazeGenerating(width, height));
-
         }
         catch(RejectedExecutionException e)
         {
@@ -278,16 +278,13 @@ public class Model extends Observable implements IModel{
                         toServer.flush();
                         byte[] compressedMaze = (byte[]) fromServer.readObject(); //read generated maze (compressed with MyCompressor) from server
                         InputStream is = new MyDecompressorInputStream(new ByteArrayInputStream(compressedMaze));
-                        byte[] decompressedMaze = new byte[100000];
+                        int byteArraySize = ((width * height) / 8) + 13;
+                        byte[] decompressedMaze = new byte[byteArraySize];
                         is.read(decompressedMaze); //Fill decompressedMaze with bytes
                         maze = new Maze(decompressedMaze);
                         Position characterPos = maze.getStartPosition();
                         characterPositionRow = characterPos.getRowIndex();
                         characterPositionColumn = characterPos.getColumnIndex();
-
-
-                        maze.print();
-
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -305,6 +302,7 @@ public class Model extends Observable implements IModel{
     public void close() {
         try{
             pool.shutdown();
+            View.close();
             pool.awaitTermination(3, TimeUnit.SECONDS);
             stopServers();
         }
