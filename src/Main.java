@@ -18,6 +18,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
         //ViewModel -> Model
         Configurations.setDefaultConfigurations();
+        Configurations.setThreadPoolSize(1);
         Model model = new Model();
         model.startServers();
         ViewModel viewModel = new ViewModel(model);

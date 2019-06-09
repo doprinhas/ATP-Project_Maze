@@ -1,6 +1,7 @@
 package View;
 
 
+import Server.Configurations;
 import ViewModel.ViewModel;
 import com.sun.deploy.ui.ProgressDialog;
 import javafx.beans.property.SimpleStringProperty;
@@ -23,10 +24,14 @@ import javafx.stage.Stage;
 import java.awt.*;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class View implements Observer, IView{
 
     public MazeDisplayer mazeDisplayer;
+    public javafx.scene.layout.Pane pane;
 
     public javafx.scene.control.TextField txtfld_rowsNum;
     public javafx.scene.control.TextField txtfld_columnsNum;
@@ -43,6 +48,8 @@ public class View implements Observer, IView{
     public StringProperty characterPositionColumn = new SimpleStringProperty("0");
     public StringProperty characterPositionFloor = new SimpleStringProperty("0");
 
+    private static ExecutorService pool;
+
 
     @FXML
 
@@ -53,6 +60,8 @@ public class View implements Observer, IView{
     public void initialize( ViewModel viewModel , Stage mainStage , Scene mainScene ){
         if ( viewModel == null || mainStage == null || mainScene == null)
             return;
+
+        pool = Executors.newFixedThreadPool(1);
 
         this.viewModel = viewModel;
         this.mainScene = mainScene;
@@ -68,24 +77,21 @@ public class View implements Observer, IView{
     }
 
     public void setResizeEvent() {
-        this.mainScene.widthProperty().addListener((observable, oldValue, newValue) -> {
-//            mazeDisplayer.drawMaze();
+        this.pane.widthProperty().addListener((observable) -> {
+            mazeDisplayer.drawMaze(pane);
         });
 
-        this.mainScene.heightProperty().addListener((observable, oldValue, newValue) -> {
-//            mazeDisplayer.drawMaze();
+        this.pane.heightProperty().addListener((observable) -> {
+            mazeDisplayer.drawMaze(pane);
         });
     }
 
     @Override
     public void update(Observable o, Object arg) {
-        if (arg != null && arg.equals("Character Moved")) {
+        if (arg != null && arg.equals("Character Moved"))
             moveCharacter();
-            btn_generateMaze.setDisable(false);
-        }
         else {
             displayMaze(viewModel.getMaze());
-            btn_generateMaze.setDisable(false);
         }
     }
 
@@ -99,21 +105,26 @@ public class View implements Observer, IView{
 
     @Override
     public void displayMaze(int[][] maze) {
-        mazeDisplayer.setMaze(maze);
-        mazeDisplayer.setGoalPosition(viewModel.getGoalPositionRow() , viewModel.getGoalPositionCol());
-        mazeDisplayer.drawMaze();
-        mazeDisplayer.setCharacterPosition(viewModel.getCharacterPositionRow(), viewModel.getCharacterPositionColumn());
-        this.characterPositionRow.set(characterPositionRow.getValue() + "");
-        this.characterPositionColumn.set(characterPositionColumn.getValue() + "");
-        btn_solveMaze.setDisable(false);
+        pool.execute( () -> {
+            mazeDisplayer.setMaze(maze);
+            mazeDisplayer.setGoalPosition(viewModel.getGoalPositionRow() , viewModel.getGoalPositionCol());
+            mazeDisplayer.drawMaze(pane);
+
+            mazeDisplayer.setCharacterPosition(viewModel.getCharacterPositionRow() , viewModel.getCharacterPositionColumn());
+            this.characterPositionRow.set(characterPositionRow.getValue() + "");
+            this.characterPositionColumn.set(characterPositionColumn.getValue() + "");
+
+            btn_solveMaze.setDisable(false);
+            btn_generateMaze.setDisable(false);
+        });
     }
 
     //<editor-fold desc="View -> ViewModel">
     public void generateMaze() {
-        int heigth = Integer.valueOf(txtfld_rowsNum.getText());
-        int width = Integer.valueOf(txtfld_columnsNum.getText());
         btn_generateMaze.setDisable(true);
         btn_solveMaze.setDisable(true);
+        int heigth = Integer.valueOf(txtfld_rowsNum.getText());
+        int width = Integer.valueOf(txtfld_columnsNum.getText());
         viewModel.generateMaze(width, heigth);
     }
 
@@ -160,6 +171,11 @@ public class View implements Observer, IView{
 
     public void numericOnly( KeyEvent event ){
         KeyCode c = event.getCode();
+    }
+
+    public static void close() throws InterruptedException {
+        pool.shutdown();
+        pool.awaitTermination(3 , TimeUnit.SECONDS);
     }
 
 }

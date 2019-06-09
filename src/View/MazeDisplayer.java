@@ -11,6 +11,8 @@ import java.awt.*;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
+
+
 public class MazeDisplayer extends Canvas {
     
     private int[][] maze;
@@ -23,16 +25,13 @@ public class MazeDisplayer extends Canvas {
     public MazeDisplayer() {
         characterRowPosition = 0;
         characterColPosition = 0;
+        gc = getGraphicsContext2D();
     }
+
     
     public void setMaze( int[][] maze ){
-        if ( maze != null ) {
+        if ( maze != null )
             this.maze = maze;
-            canvasHeight = getHeight();
-            canvasWidth = getWidth();
-            cellHeight = canvasHeight / maze.length;
-            cellWidth = canvasWidth / maze[0].length;
-        }
     }
 
     public void setGoalPosition( int row , int col ){
@@ -44,7 +43,7 @@ public class MazeDisplayer extends Canvas {
 
     public void setCharacterPosition( int row , int col ){
         if ( row < maze.length && col < maze[row].length ){
-            gc.clearRect(characterColPosition*cellWidth +1, characterRowPosition*cellHeight +1, cellWidth-1, cellHeight-1);
+            gc.clearRect(characterColPosition*cellWidth +1, characterRowPosition*cellHeight +1, cellWidth-2, cellHeight-2);
             characterColPosition = col;
             characterRowPosition = row;
             redrawCharacter();
@@ -61,31 +60,40 @@ public class MazeDisplayer extends Canvas {
 
     public void redrawCharacter() {
         Image charImage = getImage(ImageFileNameCharacter.get());
-        gc.drawImage(charImage , characterColPosition * cellHeight , characterRowPosition * cellWidth , cellWidth , cellHeight);
+        gc.drawImage(charImage , characterColPosition * cellWidth +1 ,characterRowPosition * cellHeight +1 , cellWidth -2, cellHeight-2);
     }
 
-    public void drawMaze() {
+    public void drawMaze(javafx.scene.layout.Pane pane) {
         if ( maze == null )
             return;
 
         Image wallImage = getImage(ImageFileNameWall.get());
-        Image charImage = getImage(ImageFileNameCharacter.get());
         Image endImage = getImage(ImageFileNameEnd.get());
-        if ( wallImage == null || charImage == null /*|| endImage == null*/ )
+        if ( wallImage == null  || endImage == null )
             return;
 
-        gc = getGraphicsContext2D();
+        setCanvasSize(pane);
+
         gc.clearRect(0, 0, getWidth(), getHeight());
 
         for ( int i = 0 ; i < maze.length ; i++ )
             for ( int j = 0 ; j < maze[i].length ; j++ )
                 if ( maze[i][j] == 1 )
-                    gc.drawImage( wallImage , j * cellHeight , i * cellWidth , cellHeight , cellWidth);
+                    gc.drawImage( wallImage  , j * cellWidth , i * cellHeight , cellWidth , cellHeight);
 
 
+        redrawCharacter();
+        gc.drawImage( endImage  , ensPositionCol * cellWidth , endPositionRow * cellHeight , cellWidth , cellHeight);
 
-        gc.drawImage( endImage , endPositionRow * cellHeight , ensPositionCol * cellWidth , cellHeight , cellWidth);
+    }
 
+    private void setCanvasSize(javafx.scene.layout.Pane pane){
+        setWidth(pane.getWidth());
+        setHeight(pane.getHeight());
+        canvasHeight = getHeight();
+        canvasWidth = getWidth();
+        cellHeight = canvasHeight / maze.length;
+        cellWidth = canvasWidth / maze[0].length;
     }
 
     private Image getImage( String path ){
@@ -93,7 +101,6 @@ public class MazeDisplayer extends Canvas {
         try {
             image = new Image(new FileInputStream(path));
         } catch (FileNotFoundException e) {
-
         }
         return image;
     }
