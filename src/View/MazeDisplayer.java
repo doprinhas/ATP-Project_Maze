@@ -22,6 +22,7 @@ public class MazeDisplayer extends Canvas {
     private Solution mazeSol;
     private int characterRowPosition;
     private int characterColPosition;
+    private int characterFloorPosition;
     private int endPositionRow;
     private int ensPositionCol;
     private boolean isFinished;

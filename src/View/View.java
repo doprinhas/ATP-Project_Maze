@@ -90,13 +90,13 @@ public class View implements Observer, IView{
     public void update( Observable o, Object arg ) {
 
             if (arg != null && arg.equals("Character Moved"))
-                moveCharacter(viewModel.getCharacterPositionRow(), viewModel.getCharacterPositionColumn());
+                moveCharacter( viewModel.getCharacterPositionRow(), viewModel.getCharacterPositionColumn() );
 
             else if (arg != null && arg.equals("Maze Solution"))
-                pool.execute( () -> { displaySolution(viewModel.getSolution()); });
+                pool.execute( () -> displaySolution( viewModel.getSolution() ));
 
             else
-                pool.execute( () -> { displayMaze(viewModel.getMaze()); });
+                pool.execute( () -> displayMaze( viewModel.getMaze() ));
 
     }
 
@@ -109,7 +109,7 @@ public class View implements Observer, IView{
     }
 
     @Override
-    public void displayMaze(int[][] maze) {
+    public void displayMaze( int[][] maze ) {
 
         mazeDisplayer.setMaze(maze);
         mazeDisplayer.setGoalPosition(viewModel.getGoalPositionRow() , viewModel.getGoalPositionCol());
