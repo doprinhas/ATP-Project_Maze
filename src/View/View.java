@@ -109,7 +109,7 @@ public class View implements Observer, IView{
     }
 
     @Override
-    public void displayMaze( int[][] maze ) {
+    public void displayMaze( int[][][] maze ) {
 
         mazeDisplayer.setMaze(maze);
         mazeDisplayer.setGoalPosition(viewModel.getGoalPositionRow() , viewModel.getGoalPositionCol());

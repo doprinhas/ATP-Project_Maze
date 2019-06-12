@@ -88,7 +88,7 @@ public class Model extends Observable implements IModel{
     }
 
     @Override
-    public int[][] getMaze() {
+    public int[][][] getMaze() {
         return maze.toIntArray();
     }
 

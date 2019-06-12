@@ -18,7 +18,7 @@ import java.util.ArrayList;
 
 public class MazeDisplayer extends Canvas {
     
-    private int[][] maze;
+    private int[][][] maze;
     private Solution mazeSol;
     private int characterRowPosition;
     private int characterColPosition;
@@ -38,7 +38,7 @@ public class MazeDisplayer extends Canvas {
         gc = getGraphicsContext2D();
     }
 
-    public void setMaze( int[][] maze ){
+    public void setMaze( int[][][] maze ){
         if ( maze != null )
             this.maze = maze;
         isFinished = false;
@@ -119,9 +119,9 @@ public class MazeDisplayer extends Canvas {
         gc.clearRect(0, 0, getWidth(), getHeight());
 
         //drawing maze walls
-        for ( int i = 0 ; i < maze.length ; i++ )
-            for ( int j = 0 ; j < maze[i].length ; j++ )
-                if ( maze[i][j] == 1 )
+        for ( int i = 0 ; i < maze[characterFloorPosition].length ; i++ )
+            for ( int j = 0 ; j < maze[characterFloorPosition][i].length ; j++ )
+                if ( maze[characterFloorPosition][i][j] == 1 )
                     gc.drawImage( wallImage  , j * cellWidth , i * cellHeight , cellWidth , cellHeight);
         //drawing finish point and character
         drawGoalPos();
