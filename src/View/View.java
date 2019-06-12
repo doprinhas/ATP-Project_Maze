@@ -3,6 +3,7 @@ package View;
 
 import Server.Configurations;
 import ViewModel.ViewModel;
+import algorithms.search.Solution;
 import com.sun.deploy.ui.ProgressDialog;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -50,7 +51,6 @@ public class View implements Observer, IView{
 
     private static ExecutorService pool;
 
-
     @FXML
 
     private ViewModel viewModel;
@@ -78,77 +78,95 @@ public class View implements Observer, IView{
 
     public void setResizeEvent() {
         this.pane.widthProperty().addListener((observable) -> {
-            mazeDisplayer.drawMaze(pane);
+            mazeDisplayer.reDrawMaze(pane);
         });
 
         this.pane.heightProperty().addListener((observable) -> {
-            mazeDisplayer.drawMaze(pane);
+            mazeDisplayer.reDrawMaze(pane);
         });
     }
 
     @Override
-    public void update(Observable o, Object arg) {
-        if (arg != null && arg.equals("Character Moved"))
-            moveCharacter();
-        else {
-            displayMaze(viewModel.getMaze());
-        }
+    public void update( Observable o, Object arg ) {
+
+            if (arg != null && arg.equals("Character Moved"))
+                moveCharacter(viewModel.getCharacterPositionRow(), viewModel.getCharacterPositionColumn());
+
+            else if (arg != null && arg.equals("Maze Solution"))
+                pool.execute( () -> { displaySolution(viewModel.getSolution()); });
+
+            else
+                pool.execute( () -> { displayMaze(viewModel.getMaze()); });
+
     }
 
-    public void moveCharacter(){
-        mazeDisplayer.setCharacterPosition(viewModel.getCharacterPositionRow(), viewModel.getCharacterPositionColumn());
-        this.characterPositionRow.set(viewModel.getCharacterPositionRow() + "");
-        this.characterPositionColumn.set(viewModel.getCharacterPositionColumn() + "");
+    public void moveCharacter( int row , int col ){
+        mazeDisplayer.setCharacterPosition(row, col);
+        this.characterPositionRow.set(row + "");
+        this.characterPositionColumn.set(col + "");
 //        this.characterPositionFloor.set(characterPositionFloor.getValue());
-        mazeDisplayer.redrawCharacter();
+        mazeDisplayer.drawCharacter();
     }
 
     @Override
     public void displayMaze(int[][] maze) {
-        pool.execute( () -> {
-            mazeDisplayer.setMaze(maze);
-            mazeDisplayer.setGoalPosition(viewModel.getGoalPositionRow() , viewModel.getGoalPositionCol());
-            mazeDisplayer.drawMaze(pane);
 
-            mazeDisplayer.setCharacterPosition(viewModel.getCharacterPositionRow() , viewModel.getCharacterPositionColumn());
-            this.characterPositionRow.set(characterPositionRow.getValue() + "");
-            this.characterPositionColumn.set(characterPositionColumn.getValue() + "");
+        mazeDisplayer.setMaze(maze);
+        mazeDisplayer.setGoalPosition(viewModel.getGoalPositionRow() , viewModel.getGoalPositionCol());
+        mazeDisplayer.drawMaze(pane);
 
-            btn_solveMaze.setDisable(false);
-            btn_generateMaze.setDisable(false);
-        });
+        mazeDisplayer.setCharacterPosition(viewModel.getCharacterPositionRow() , viewModel.getCharacterPositionColumn());
+        this.characterPositionRow.set(characterPositionRow.getValue() + "");
+        this.characterPositionColumn.set(characterPositionColumn.getValue() + "");
+
+        btn_solveMaze.setDisable(false);
+        btn_generateMaze.setDisable(false);
     }
 
     //<editor-fold desc="View -> ViewModel">
     public void generateMaze() {
+
         btn_generateMaze.setDisable(true);
         btn_solveMaze.setDisable(true);
+
         int heigth = Integer.valueOf(txtfld_rowsNum.getText());
         int width = Integer.valueOf(txtfld_columnsNum.getText());
+
+        mazeDisplayer.setSol(null);
         viewModel.generateMaze(width, heigth);
+
     }
 
-    public void solveMaze( ActionEvent actionEvent ) {
+    public void solveMaze() {
+
         btn_generateMaze.setDisable(true);
         btn_solveMaze.setDisable(true);
 
         showAlert("Solving Maze...");
+        viewModel.solveMaze();
+
+    }
+
+    public void displaySolution( Solution sol ){
+
+        mazeDisplayer.setSol(sol);
+        mazeDisplayer.drawSolution();
+
+        btn_generateMaze.setDisable(false);
 
     }
     //</editor-fold>
 
-    private void showAlert( String alertMessage ) {
-
+    public static void showAlert( String alertMessage ) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setContentText(alertMessage);
         alert.show();
     }
 
-    public void KeyPressed(KeyEvent keyEvent) {
+    public void KeyPressed( KeyEvent keyEvent ) {
         viewModel.moveCharacter(keyEvent.getCode());
         keyEvent.consume();
     }
-
 
     public void About( ActionEvent actionEvent ) {
         try {
@@ -164,12 +182,12 @@ public class View implements Observer, IView{
         }
     }
 
-    public void mouseClicked(MouseEvent mouseEvent) {
+    public void mouseClicked( MouseEvent mouseEvent ) {
         this.mazeDisplayer.requestFocus();
     }
     //endregion
 
-    public void numericOnly( KeyEvent event ){
+    public void numericOnly( KeyEvent event ) {
         KeyCode c = event.getCode();
     }
 

@@ -224,15 +224,16 @@ public class Model extends Observable implements IModel{
         }
     }
 
-    @Override
-    public void solve(Maze maze) {
+    public void solveMaze() {
         if(mazeSol == null)
             pool.execute(() -> communicateWithServer_MazeSolver());
-        else {
-            setChanged();
-            notifyObservers("MazeSolution");
-        }
 
+    }
+
+
+    @Override
+    public Solution getMazeSol(){
+        return mazeSol;
     }
 
     private synchronized  void communicateWithServer_MazeSolver()
@@ -285,6 +286,7 @@ public class Model extends Observable implements IModel{
                         Position characterPos = maze.getStartPosition();
                         characterPositionRow = characterPos.getRowIndex();
                         characterPositionColumn = characterPos.getColumnIndex();
+                        mazeSol = null;
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
