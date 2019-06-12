@@ -11,7 +11,7 @@ public interface IModel {
 
     //Maze
     void generateMaze(int width , int height);
-    int [][] getMaze();
+    int [][][] getMaze();
 
     //Character
     void moveCharacter(KeyCode movement);
@@ -24,7 +24,8 @@ public interface IModel {
     boolean saveGame(String name);
     List<String> getAllSavedMazes();
     void loadGame(String name) throws FileNotFoundException;
-    void solve(Maze maze);
+    void solveMaze();
+    Solution getMazeSol();
 
     //
     void close();
