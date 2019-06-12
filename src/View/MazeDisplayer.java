@@ -34,6 +34,7 @@ public class MazeDisplayer extends Canvas {
     public MazeDisplayer() {
         characterRowPosition = 0;
         characterColPosition = 0;
+        characterFloorPosition = 0;
         isFinished = false;
         gc = getGraphicsContext2D();
     }
@@ -50,7 +51,7 @@ public class MazeDisplayer extends Canvas {
 
     public void setGoalPosition( int row , int col ){
 
-        if ( row < maze.length && col < maze[0].length ){
+        if ( row < maze[characterFloorPosition].length && col < maze[characterFloorPosition][0].length ){
             endPositionRow = row;
             ensPositionCol = col;
         }
@@ -59,7 +60,7 @@ public class MazeDisplayer extends Canvas {
 
     public void setCharacterPosition( int row , int col ){
 
-        if ( (row < maze.length && col < maze[row].length) && !isFinished ){
+        if ( (row < maze[characterFloorPosition].length && col < maze[characterFloorPosition][row].length) && !isFinished ){
             gc.clearRect(characterColPosition*cellWidth +1, characterRowPosition*cellHeight +1, cellWidth-2, cellHeight-2);
             characterColPosition = col;
             characterRowPosition = row;
@@ -139,8 +140,8 @@ public class MazeDisplayer extends Canvas {
         setHeight(pane.getHeight());
         canvasHeight = getHeight();
         canvasWidth = getWidth();
-        cellHeight = canvasHeight / maze.length;
-        cellWidth = canvasWidth / maze[0].length;
+        cellHeight = canvasHeight / maze[characterFloorPosition].length;
+        cellWidth = canvasWidth / maze[characterFloorPosition][0].length;
     }
 
     private Image getImage( String path ){

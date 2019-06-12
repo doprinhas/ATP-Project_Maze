@@ -279,7 +279,7 @@ public class Model extends Observable implements IModel{
                         toServer.flush();
                         byte[] compressedMaze = (byte[]) fromServer.readObject(); //read generated maze (compressed with MyCompressor) from server
                         InputStream is = new MyDecompressorInputStream(new ByteArrayInputStream(compressedMaze));
-                        int byteArraySize = ((width * height) / 8) + 13;
+                        int byteArraySize = ((width * height)) + 13;
                         byte[] decompressedMaze = new byte[byteArraySize];
                         is.read(decompressedMaze); //Fill decompressedMaze with bytes
                         maze = new Maze(decompressedMaze);
