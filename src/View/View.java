@@ -142,7 +142,7 @@ public class View implements Observer, IView{
         btn_generateMaze.setDisable(true);
         btn_solveMaze.setDisable(true);
 
-        showAlert("Solving Maze...");
+        //showAlert("Solving Maze...");
         viewModel.solveMaze();
 
     }
