@@ -11,7 +11,7 @@ public interface IModel {
 
     //Maze
     void generateMaze(int width , int height);
-    int [][][] getMaze();
+    int [][] getMaze();
 
     //Character
     void moveCharacter(KeyCode movement);

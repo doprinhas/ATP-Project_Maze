@@ -18,11 +18,10 @@ import java.util.ArrayList;
 
 public class MazeDisplayer extends Canvas {
     
-    private int[][][] maze;
+    private int[][] maze;
     private Solution mazeSol;
     private int characterRowPosition;
     private int characterColPosition;
-    private int characterFloorPosition;
     private int endPositionRow;
     private int ensPositionCol;
     private boolean isFinished;
@@ -34,12 +33,11 @@ public class MazeDisplayer extends Canvas {
     public MazeDisplayer() {
         characterRowPosition = 0;
         characterColPosition = 0;
-        characterFloorPosition = 0;
         isFinished = false;
         gc = getGraphicsContext2D();
     }
 
-    public void setMaze( int[][][] maze ){
+    public void setMaze( int[][] maze ){
         if ( maze != null )
             this.maze = maze;
         isFinished = false;
@@ -51,7 +49,7 @@ public class MazeDisplayer extends Canvas {
 
     public void setGoalPosition( int row , int col ){
 
-        if ( row < maze[characterFloorPosition].length && col < maze[characterFloorPosition][0].length ){
+        if ( row < maze.length && col < maze[0].length ){
             endPositionRow = row;
             ensPositionCol = col;
         }
@@ -60,7 +58,7 @@ public class MazeDisplayer extends Canvas {
 
     public void setCharacterPosition( int row , int col ){
 
-        if ( (row < maze[characterFloorPosition].length && col < maze[characterFloorPosition][row].length) && !isFinished ){
+        if ( (row < maze.length && col < maze[row].length) && !isFinished ){
             gc.clearRect(characterColPosition*cellWidth +1, characterRowPosition*cellHeight +1, cellWidth-2, cellHeight-2);
             characterColPosition = col;
             characterRowPosition = row;
@@ -120,9 +118,9 @@ public class MazeDisplayer extends Canvas {
         gc.clearRect(0, 0, getWidth(), getHeight());
 
         //drawing maze walls
-        for ( int i = 0 ; i < maze[characterFloorPosition].length ; i++ )
-            for ( int j = 0 ; j < maze[characterFloorPosition][i].length ; j++ )
-                if ( maze[characterFloorPosition][i][j] == 1 )
+        for ( int i = 0 ; i < maze.length ; i++ )
+            for ( int j = 0 ; j < maze[i].length ; j++ )
+                if ( maze[i][j] == 1 )
                     gc.drawImage( wallImage  , j * cellWidth , i * cellHeight , cellWidth , cellHeight);
         //drawing finish point and character
         drawGoalPos();
@@ -140,8 +138,8 @@ public class MazeDisplayer extends Canvas {
         setHeight(pane.getHeight());
         canvasHeight = getHeight();
         canvasWidth = getWidth();
-        cellHeight = canvasHeight / maze[characterFloorPosition].length;
-        cellWidth = canvasWidth / maze[characterFloorPosition][0].length;
+        cellHeight = canvasHeight / maze.length;
+        cellWidth = canvasWidth / maze[0].length;
     }
 
     private Image getImage( String path ){

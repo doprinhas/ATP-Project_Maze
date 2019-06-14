@@ -45,7 +45,7 @@ public class ViewModel extends Observable implements Observer {
     //</editor-fold>
 
     //<editor-fold desc="Getters">
-    public int[][][] getMaze() {
+    public int[][] getMaze() {
         return model.getMaze();
     }
 
