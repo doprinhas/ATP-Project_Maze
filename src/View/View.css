@@ -30,7 +30,9 @@ Button:hover{
     /*-fx-content-display: LEFT;*/
 }
 
-Pane {
+
+.ScrollPane  {
+    -fx-background-color: black;
     -fx-border-color: white;
     -fx-padding: 5 5 5 5;
 }

@@ -8,31 +8,33 @@ import com.sun.deploy.ui.ProgressDialog;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.control.*;
+import javafx.scene.control.TextField;
+import javafx.scene.input.*;
 import javafx.stage.Modality;
 import javafx.stage.Popup;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
+import javafx.util.converter.IntegerStringConverter;
 
 import java.awt.*;
+import java.awt.ScrollPane;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.UnaryOperator;
 
 public class View implements Observer, IView{
 
     public MazeDisplayer mazeDisplayer;
-    public javafx.scene.layout.Pane pane;
+    public javafx.scene.control.ScrollPane ScrollPane;
 
     public javafx.scene.control.TextField txtfld_rowsNum;
     public javafx.scene.control.TextField txtfld_columnsNum;
@@ -49,7 +51,10 @@ public class View implements Observer, IView{
     public StringProperty characterPositionColumn = new SimpleStringProperty("0");
     public StringProperty characterPositionFloor = new SimpleStringProperty("0");
 
-    private static ExecutorService pool;
+    private double zoom;
+    private double zoomChange;
+    private final double ZOOM_PERCENTAGE = 0.5;
+
 
     @FXML
 
@@ -61,13 +66,16 @@ public class View implements Observer, IView{
         if ( viewModel == null || mainStage == null || mainScene == null)
             return;
 
-        pool = Executors.newFixedThreadPool(1);
-
+        this.zoom = 1;
         this.viewModel = viewModel;
         this.mainScene = mainScene;
         this.mainStage = mainStage;
+
+        ScrollPane.setStyle("-fx-background: black;");
+        ScrollPane.setPannable(true);
         bindProperties();
         setResizeEvent();
+
     }
 
     private void bindProperties() {
@@ -77,13 +85,14 @@ public class View implements Observer, IView{
     }
 
     public void setResizeEvent() {
-        this.pane.widthProperty().addListener((observable) -> {
-            mazeDisplayer.reDrawMaze(pane);
+        this.ScrollPane.widthProperty().addListener((observable) -> {
+            mazeDisplayer.reDrawMaze(ScrollPane , zoom);
         });
 
-        this.pane.heightProperty().addListener((observable) -> {
-            mazeDisplayer.reDrawMaze(pane);
+        this.ScrollPane.heightProperty().addListener((observable) -> {
+            mazeDisplayer.reDrawMaze(ScrollPane , zoom);
         });
+
     }
 
     @Override
@@ -93,10 +102,10 @@ public class View implements Observer, IView{
                 moveCharacter( viewModel.getCharacterPositionRow(), viewModel.getCharacterPositionColumn() );
 
             else if (arg != null && arg.equals("Maze Solution"))
-                pool.execute( () -> displaySolution( viewModel.getSolution() ));
+                displaySolution( viewModel.getSolution() );
 
             else
-                pool.execute( () -> displayMaze( viewModel.getMaze() ));
+                displayMaze( viewModel.getMaze() );
 
     }
 
@@ -111,17 +120,18 @@ public class View implements Observer, IView{
     @Override
     public void displayMaze( int[][] maze ) {
 
+        zoom = 1;
+
         mazeDisplayer.setMaze(maze);
         mazeDisplayer.setGoalPosition(viewModel.getGoalPositionRow() , viewModel.getGoalPositionCol());
-        mazeDisplayer.drawMaze(pane);
-
         mazeDisplayer.setCharacterPosition(viewModel.getCharacterPositionRow() , viewModel.getCharacterPositionColumn());
-        this.characterPositionRow.set(characterPositionRow.getValue() + "");
-        this.characterPositionColumn.set(characterPositionColumn.getValue() + "");
+        mazeDisplayer.drawMaze(ScrollPane , zoom);
 
         btn_solveMaze.setDisable(false);
         btn_generateMaze.setDisable(false);
     }
+
+
 
     //<editor-fold desc="View -> ViewModel">
     public void generateMaze() {
@@ -131,9 +141,11 @@ public class View implements Observer, IView{
 
         int heigth = Integer.valueOf(txtfld_rowsNum.getText());
         int width = Integer.valueOf(txtfld_columnsNum.getText());
+        this.characterPositionRow.set("0");
+        this.characterPositionColumn.set("0");
 
         mazeDisplayer.setSol(null);
-        viewModel.generateMaze(width, heigth);
+        viewModel.generateMaze( heigth , width);
 
     }
 
@@ -142,8 +154,9 @@ public class View implements Observer, IView{
         btn_generateMaze.setDisable(true);
         btn_solveMaze.setDisable(true);
 
-        //showAlert("Solving Maze...");
+
         viewModel.solveMaze();
+        showAlert("Solving Maze..." , Alert.AlertType.INFORMATION);
 
     }
 
@@ -153,12 +166,13 @@ public class View implements Observer, IView{
         mazeDisplayer.drawSolution();
 
         btn_generateMaze.setDisable(false);
+        btn_solveMaze.setDisable(false);
 
     }
     //</editor-fold>
 
-    public static void showAlert( String alertMessage ) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+    public static void showAlert( String alertMessage , Alert.AlertType type) {
+        Alert alert = new Alert(type);
         alert.setContentText(alertMessage);
         alert.show();
     }
@@ -187,13 +201,46 @@ public class View implements Observer, IView{
     }
     //endregion
 
-    public void numericOnly( KeyEvent event ) {
+    public void numericOnly( KeyEvent event /*, TextField field*/) {
+
+        if (event.getSource().toString().contains("txtfld_rowsNum"))
+            checkInput(event , txtfld_rowsNum);
+        if (event.getSource().toString().contains("txtfld_columnsNum"))
+            checkInput(event , txtfld_columnsNum);
+
+    }
+
+    private void checkInput( KeyEvent event , TextField textField ){
         KeyCode c = event.getCode();
+        String text = textField.getText();
+        if (c.isLetterKey() || text.length() > 3) {
+            textField.setText(text.substring(0 , text.length() - 1));
+            showAlert("Please Enter Numbers Smaller Then 1000!" , Alert.AlertType.WARNING);
+        }
+    }
+
+    public void zoomInOut( ScrollEvent event ){
+
+        if (!event.isControlDown())
+            return;
+
+        double delta = event.getDeltaY();
+        if ( delta > 0 )
+            zoom += ZOOM_PERCENTAGE;
+        else if ( delta < 0 )
+            zoom -= ZOOM_PERCENTAGE;
+        if ( zoom <= 1 )
+            zoom = 1;
+        else if (zoom >= 6)
+            zoom = 6;
+
+        System.out.println(zoom);
+        mazeDisplayer.reDrawMaze( ScrollPane , zoom );
+        event.consume();
     }
 
     public static void close() throws InterruptedException {
-        pool.shutdown();
-        pool.awaitTermination(3 , TimeUnit.SECONDS);
+        MazeDisplayer.close();
     }
 
 }

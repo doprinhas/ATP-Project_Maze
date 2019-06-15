@@ -27,8 +27,8 @@ public class ViewModel extends Observable implements Observer {
     //</editor-fold>
 
     //<editor-fold desc="ViewModel Functionality">
-    public void generateMaze(int width, int height){
-        model.generateMaze(width, height);
+    public void generateMaze(int height, int width){
+        model.generateMaze(height, width);
     }
 
     public Solution getSolution(){

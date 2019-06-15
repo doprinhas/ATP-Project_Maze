@@ -77,9 +77,9 @@ public class Model extends Observable implements IModel{
     }
 
     @Override
-    public void generateMaze(int width , int height) {
+    public void generateMaze(int height , int width) {
         try {
-            pool.execute(() -> communicateWithServer_MazeGenerating(width, height));
+            pool.execute(() -> communicateWithServer_MazeGenerating(height, width));
         }
         catch(RejectedExecutionException e)
         {
@@ -94,6 +94,8 @@ public class Model extends Observable implements IModel{
 
     @Override
     public void moveCharacter(KeyCode movement) {
+        if (maze == null)
+            return;
         switch (movement) {
             case UP:
                 if(maze.isAPass(characterPositionRow-1, characterPositionColumn))
@@ -114,6 +116,7 @@ public class Model extends Observable implements IModel{
             case HOME:
                 characterPositionRow = maze.getStartPosition().getRowIndex();
                 characterPositionColumn = maze.getStartPosition().getColumnIndex();
+                break;
         }
         setChanged();
         notifyObservers("Character Moved");
@@ -225,8 +228,9 @@ public class Model extends Observable implements IModel{
     }
 
     public void solveMaze() {
-        if(mazeSol == null)
-            pool.execute(() -> communicateWithServer_MazeSolver());
+
+        maze.setStartPos( new Position(characterPositionRow , characterPositionColumn) );
+        pool.execute(() -> communicateWithServer_MazeSolver());
 
     }
 
